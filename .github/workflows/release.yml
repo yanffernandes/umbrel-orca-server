@@ -1,0 +1,153 @@
+name: Release
+
+# Daily: package the latest Orca release when there is a new one.
+# Manual: package a given Orca version, or re-release the current one as -patch.N
+# after changes to the image.
+on:
+  schedule:
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+    inputs:
+      orca_version:
+        description: Orca version to package (blank for the latest release)
+        required: false
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Plan the release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED: ${{ inputs.orca_version }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          current_orca=$(sed -n 's/^ARG ORCA_VERSION=//p' image/Dockerfile)
+          current_app=$(sed -n 's/^version: "\(.*\)"$/\1/p' yanffernandes-orca/umbrel-app.yml)
+          target=${REQUESTED:-$(gh release view --repo stablyai/orca --json tagName --jq .tagName)}
+          target=${target#v}
+          if ! [[ $target =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Not an Orca desktop release: $target" >&2
+            exit 1
+          fi
+
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/umbrel-orca-server"
+          if [ "$target" = "$current_orca" ]; then
+            if ! docker buildx imagetools inspect "$image:$current_app" >/dev/null 2>&1; then
+              # Nothing published for the current version yet (first release).
+              version=$current_app
+              notes="Orca $target."
+            elif [ "$EVENT" = schedule ]; then
+              echo "Orca $target is already packaged."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            else
+              patch=$(sed -n 's/.*-patch\.\([0-9]*\)$/\1/p' <<<"$current_app")
+              version="$target-patch.$(( ${patch:-0} + 1 ))"
+              notes="Packaging update for Orca $target."
+            fi
+          else
+            digest() {
+              gh api "repos/stablyai/orca/releases/tags/v$target" \
+                --jq ".assets[] | select(.name == \"orca-ide_${target}_$1.deb\") | .digest" \
+                | sed 's/^sha256://'
+            }
+            amd64=$(digest amd64)
+            arm64=$(digest arm64)
+            if ! [[ $amd64 =~ ^[0-9a-f]{64}$ && $arm64 =~ ^[0-9a-f]{64}$ ]]; then
+              echo "The .deb packages for Orca $target are not published yet." >&2
+              exit 1
+            fi
+            sed -i -E \
+              -e "s/^ARG ORCA_VERSION=.*/ARG ORCA_VERSION=$target/" \
+              -e "s/^ARG ORCA_DEB_SHA256_AMD64=.*/ARG ORCA_DEB_SHA256_AMD64=$amd64/" \
+              -e "s/^ARG ORCA_DEB_SHA256_ARM64=.*/ARG ORCA_DEB_SHA256_ARM64=$arm64/" \
+              image/Dockerfile
+            version=$target
+            notes=$(printf 'Updates Orca to %s.\n\nOrca release notes: https://github.com/stablyai/orca/releases/tag/v%s' "$target" "$target")
+          fi
+
+          echo "Releasing $version ($image)"
+          {
+            echo "skip=false"
+            echo "version=$version"
+            echo "image=$image"
+            echo "notes<<EOF"
+            echo "$notes"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        if: steps.plan.outputs.skip == 'false'
+        with:
+          node-version: 24
+
+      - name: Unit tests
+        if: steps.plan.outputs.skip == 'false'
+        run: node --test image/companion/test/
+
+      - uses: docker/setup-qemu-action@v3
+        if: steps.plan.outputs.skip == 'false'
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.plan.outputs.skip == 'false'
+
+      - name: Build for the smoke test (amd64)
+        if: steps.plan.outputs.skip == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: image
+          load: true
+          tags: umbrel-orca-server:candidate
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test
+        if: steps.plan.outputs.skip == 'false'
+        run: scripts/smoke-test.sh umbrel-orca-server:candidate
+
+      - uses: docker/login-action@v3
+        if: steps.plan.outputs.skip == 'false'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push (amd64 + arm64)
+        id: push
+        if: steps.plan.outputs.skip == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: image
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.plan.outputs.image }}:${{ steps.plan.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Point the Umbrel package at the new image
+        if: steps.plan.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+          IMAGE_REF: ${{ steps.plan.outputs.image }}:${{ steps.plan.outputs.version }}@${{ steps.push.outputs.digest }}
+          NOTES: ${{ steps.plan.outputs.notes }}
+        run: |
+          set -euo pipefail
+          python3 scripts/set-release.py "$VERSION" "$IMAGE_REF" "$NOTES"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add image/Dockerfile yanffernandes-orca
+          git commit -m "Release $VERSION"
+          git push

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Orca Server</title>
+    <link rel="icon" href="/static/orca-icon.png" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <header class="top">
+      <img class="app-icon" src="/static/orca-icon.png" alt="" width="48" height="48" />
+      <div class="titles">
+        <h1>Orca Server</h1>
+        <p class="subtitle">Agents, terminals, and worktrees running on your Umbrel</p>
+      </div>
+      <span class="pill" id="server-pill" data-state="loading">Loading…</span>
+    </header>
+
+    <main>
+      <section class="card" id="login-card" hidden>
+        <h2>Sign in</h2>
+        <p>
+          Enter this app's password. umbrelOS shows it the first time you open the app, and any
+          time from the app's <strong>Show credentials</strong> option.
+        </p>
+        <form id="login-form" class="row">
+          <input
+            id="login-password"
+            class="text"
+            type="password"
+            autocomplete="current-password"
+            placeholder="App password"
+            required
+          />
+          <button type="submit" class="primary">Sign in</button>
+        </form>
+        <p class="error" id="login-error" hidden></p>
+      </section>
+
+      <div id="dashboard" hidden>
+        <section class="notice" id="server-problem" hidden>
+          <h2 id="server-problem-title">The Orca server is not running</h2>
+          <p id="server-problem-text"></p>
+          <details>
+            <summary>Recent server output</summary>
+            <pre id="server-output"></pre>
+          </details>
+          <button type="button" id="restart-server">Restart server</button>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Connect Orca Desktop</h2>
+            <a
+              class="muted-link"
+              href="https://onorca.dev/docs/remote-servers"
+              target="_blank"
+              rel="noreferrer"
+              >Docs</a
+            >
+          </div>
+          <ol class="steps">
+            <li>
+              <h3>Pick the address your computer uses to reach this Umbrel</h3>
+              <div class="choices" id="host-choices" role="radiogroup" aria-label="Server address"></div>
+              <input
+                id="custom-host"
+                class="text mono"
+                placeholder="100.101.102.103 or umbrel.tailnet-name.ts.net"
+                spellcheck="false"
+                autocomplete="off"
+                hidden
+              />
+              <p class="hint">
+                Using Tailscale? Choose your Umbrel's Tailscale IP or MagicDNS name so Orca keeps
+                working away from home. Orca connects on port <span id="orca-port">6768</span>.
+              </p>
+            </li>
+            <li>
+              <h3>Copy the access link</h3>
+              <div id="link-ready" hidden>
+                <div class="row">
+                  <input
+                    id="access-link"
+                    class="text mono"
+                    type="password"
+                    readonly
+                    aria-label="Access link"
+                  />
+                  <button type="button" id="toggle-link">Show</button>
+                  <button type="button" id="copy-link" class="primary">Copy</button>
+                </div>
+                <p class="hint">
+                  A link pairs one client and gives it full control of this server. Treat it like
+                  a password.
+                </p>
+              </div>
+              <p id="link-used" hidden>
+                This link has been used by a client. Create a new link to pair another computer.
+              </p>
+              <p id="link-missing" class="muted" hidden>The link appears once the server is running.</p>
+              <button type="button" id="new-link">New link</button>
+            </li>
+            <li>
+              <h3>Add the server in Orca</h3>
+              <p>
+                Open <strong>Settings → Remote Orca Servers</strong>, click
+                <strong>Add Server</strong>, name it, paste the link, and click
+                <strong>Add Server</strong>.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Orca in the browser</h2>
+          </div>
+          <p>
+            Orca's web client, connected to this server. The first time, it pairs this browser as
+            a client using the access link above.
+          </p>
+          <div class="row">
+            <a id="open-web" class="button primary" href="/web/web-index.html" target="_blank" rel="noreferrer"
+              >Open Orca Web</a
+            >
+          </div>
+          <p class="hint" id="web-hint" hidden>
+            The access link is used. This browser reconnects if it paired before; otherwise create a
+            new link first.
+          </p>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Coding agents</h2>
+          </div>
+          <p>
+            Agents run on this Umbrel and use its sign-ins, not your computer's. Install one, then
+            start it in an Orca terminal on this server to sign in.
+          </p>
+          <ul class="agents" id="agent-list"></ul>
+          <p class="hint" id="tools"></p>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Paired clients</h2>
+          </div>
+          <p class="hint">Revoking disconnects that client right away. It needs a new link to pair again.</p>
+          <ul class="clients" id="client-list"></ul>
+          <p class="muted" id="no-clients" hidden>No clients yet.</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <span id="versions"></span>
+      <a href="https://github.com/stablyai/orca" target="_blank" rel="noreferrer">Orca on GitHub</a>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  </body>
+</html>
