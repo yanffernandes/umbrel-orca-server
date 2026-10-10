@@ -96,7 +96,7 @@ jobs:
 
       - name: Unit tests
         if: steps.plan.outputs.skip == 'false'
-        run: node --test image/companion/test/
+        run: node --test image/companion/test/*.test.mjs
 
       - uses: docker/setup-qemu-action@v3
         if: steps.plan.outputs.skip == 'false'
