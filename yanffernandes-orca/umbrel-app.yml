@@ -25,7 +25,8 @@ description: >-
 
   Orca clients connect directly to port 6768. Keep it on your LAN or tailnet; do not
   forward it to the internet.
-releaseNotes: ""
+releaseNotes: >-
+  Orca 1.4.224.
 
 developer: Stably AI
 website: https://onorca.dev
