@@ -7,6 +7,7 @@ on:
     paths:
       - image/**
       - scripts/**
+      - yanffernandes-orca/**
       - .github/workflows/ci.yml
 
 jobs:
@@ -35,3 +36,26 @@ jobs:
 
       - name: Smoke test
         run: scripts/smoke-test.sh umbrel-orca-server:ci
+
+  # Checks the package against the official App Store's own linter, as the
+  # version scripts/make-official-package.py builds for getumbrel/umbrel-apps.
+  umbrel-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: getumbrel/umbrel-apps
+          path: umbrel-apps
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Lint with Umbrel's linter
+        run: |
+          python3 scripts/make-official-package.py umbrel-apps --app-id orca-server
+          cd umbrel-apps
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run lint:apps -- orca-server --check-images

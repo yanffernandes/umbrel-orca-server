@@ -31,7 +31,7 @@ releaseNotes: >-
 developer: Stably AI
 website: https://onorca.dev
 dependencies: []
-repo: https://github.com/stablyai/orca
+repo: https://github.com/yanffernandes/umbrel-orca-server
 support: https://github.com/yanffernandes/umbrel-orca-server/issues
 
 port: 6769
