@@ -127,13 +127,14 @@ To prepare a submission or an update:
 ```sh
 git clone https://github.com/getumbrel/umbrel-apps.git
 python3 scripts/make-official-package.py umbrel-apps --app-id orca-server \
-  --submission https://github.com/getumbrel/umbrel-apps/pull/<number>
+  --submission https://github.com/getumbrel/umbrel-apps/pull/6182
 cd umbrel-apps && npm ci && npm run lint:apps -- orca-server --check-images
 ```
 
 The script copies `yanffernandes-orca/` and changes only what the official store requires:
-the app id and container name, no `icon`, empty `releaseNotes` for a first submission, and
-the `submission` link. Test the package through umbrelOS and fill in umbrel-apps' pull
+the app id and container name, no `icon`, and the `submission` link. Updates keep the
+`releaseNotes` the release workflow wrote; `--new-app` empties them, as a first submission
+needs. Test the package through umbrelOS and fill in umbrel-apps' pull
 request template, including screenshots and the architectures tested.
 
 Every update in the official store is a reviewed pull request, so it moves slower than the

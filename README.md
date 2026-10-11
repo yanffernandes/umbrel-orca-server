@@ -142,11 +142,16 @@ how releases reach Umbrel. If you work with a coding agent, point it at
 
 ## Official Umbrel App Store
 
-The app is not in the official Umbrel App Store yet. Getting there means a pull request to
-[getumbrel/umbrel-apps](https://github.com/getumbrel/umbrel-apps), reviewed by the Umbrel
-team, with every update going through review as well.
-[`scripts/make-official-package.py`](scripts/make-official-package.py) builds that
-package from this one; CONTRIBUTING.md describes the steps.
+The app is submitted to the official Umbrel App Store as `orca-server` in
+[getumbrel/umbrel-apps#6182](https://github.com/getumbrel/umbrel-apps/pull/6182) and is
+waiting for review by the Umbrel team. Until it is merged, install it from this community
+store.
+
+The official app and this community app are separate installs with separate data, so
+moving from one to the other means pairing your clients and signing in to agents again.
+In the official store every update goes through review, so updates arrive there less often
+than here. [`scripts/make-official-package.py`](scripts/make-official-package.py) builds
+the official package from this one; CONTRIBUTING.md describes the steps.
 
 ## Credits and license
 
