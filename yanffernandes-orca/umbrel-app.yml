@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: developer
 name: Orca Server
-version: "1.4.227"
+version: "1.4.229"
 tagline: Keep your Orca agents, terminals, and worktrees running on your Umbrel
 icon: https://raw.githubusercontent.com/yanffernandes/umbrel-orca-server/main/assets/orca-icon.png
 description: >-
@@ -26,10 +26,10 @@ description: >-
   Orca clients connect directly to port 6768. Keep it on your LAN or tailnet; do not
   forward it to the internet.
 releaseNotes: >-
-  Updates Orca to 1.4.227.
+  Updates Orca to 1.4.229.
 
 
-  Orca release notes: https://github.com/stablyai/orca/releases/tag/v1.4.227
+  Orca release notes: https://github.com/stablyai/orca/releases/tag/v1.4.229
 
 developer: Stably AI
 website: https://onorca.dev
