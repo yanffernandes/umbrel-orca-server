@@ -7,7 +7,7 @@ services:
       APP_PORT: 8080
 
   server:
-    image: ghcr.io/yanffernandes/umbrel-orca-server:1.4.229@sha256:0fd80359c5bb727caffd950c18e03539462f1086763add0b4f0604da3f914156
+    image: ghcr.io/yanffernandes/umbrel-orca-server:1.4.230@sha256:6ed1c669583c5744e9227a37f142fe838d5eacd1ca35a4a5e5b449c6d836c15e
     restart: on-failure
     stop_grace_period: 30s
     user: "1000:1000"
